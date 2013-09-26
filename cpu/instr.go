@@ -179,7 +179,8 @@ func (s *Instruction) Inspect() (res string) {
 	return
 }
 
-func (self *Instruction) Exec() error {
+func (self *Instruction) Exec(cpu *CPU) error {
+	self.Cpu = cpu
 	ipval, err := self.Cpu.GetRegister(ip)
 	if err != nil {
 		return err
