@@ -374,37 +374,38 @@ end
 
 asm = CodeGen.new
 asm.asm do
-  ldw t0, ref(:entermain)
-  jmp_to :init_mem
-  label :entermain
-  call_to :main
-  sys EXIT,0
-
-  function :main do
-    def buffer; t1; end
-    def length; t2; end
-    ldw buffer, ref(:hashbuffer)
-    ldw length, 4
-#call_to :hash
-#call_to :printi
-    call_to :server
-    ret
-
-    label :hashbuffer
-    data 1
-    data 2
-    data 3
-    data 4
-  end
-
-  import(StringCode.new)
-  import(MemCode.new)
-  import(CryptCode.new)
-  import(ServiceCode.new)
+#ldw t0, ref(:entermain)
+  mov [t1],[ip]
+# jmp_to :init_mem
+# label :entermain
+# call_to :main
+# sys EXIT,0
+#
+# function :main do
+#   def buffer; t1; end
+#   def length; t2; end
+#   ldw buffer, ref(:hashbuffer)
+#   ldw length, 4
+##call_to :hash
+##call_to :printi
+#   call_to :server
+#   ret
+#
+#   label :hashbuffer
+#   data 1
+#   data 2
+#   data 3
+#   data 4
+# end
+#
+# import(StringCode.new)
+# import(MemCode.new)
+# import(CryptCode.new)
+# import(ServiceCode.new)
 end
 
-File.open("data/img.go","w") do |f|
-  f.puts asm.to_go
-end
+#File.open("data/img.go","w") do |f|
+# f.puts asm.to_go
+#end
 
 puts asm.to_go

@@ -5,8 +5,9 @@ import (
 		)
 
 type Arg interface {
-	SetVal(value int) error
-	GetVal() (int, error)
+	SetVal(value int, c* CPU) error
+	GetVal(c* CPU) (int, error)
+	InspectContext(c *CPU) string
 	Inspect() string
 }
 
@@ -20,85 +21,97 @@ func NewImmArg(val int) (arg *ImmediateArg){
 	return
 }
 
+func (s *ImmediateArg) InspectContext(c *CPU) (res string) {
+	res = hex(s.Val)
+	return
+}
 
 func (s *ImmediateArg) Inspect() (res string) {
 	res = hex(s.Val)
 	return
 }
 
-func (arg *ImmediateArg) SetVal(value int) (err error) {
+func (arg *ImmediateArg) SetVal(value int, c *CPU) (err error) {
 	err = errors.New("Tried to set immediate argument")
 	return
 }
 
-func (arg *ImmediateArg) GetVal() (val int, err error) {
+func (arg *ImmediateArg) GetVal(c *CPU) (val int, err error) {
 	val, err = arg.Val, nil
 	return
 }
 
 type RegisterArg struct {
 	Reg Register
-	Cpu *CPU
 }
+
 func Report(err error){
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 }
 
+
 func (s *RegisterArg) Inspect() (res string) {
-	regval,err := s.Cpu.GetRegister(s.Reg)
+	res = regnames[int(s.Reg)]
+	return
+}
+
+func (s *RegisterArg) InspectContext(c *CPU) (res string) {
+	regval,err := c.GetRegister(s.Reg)
 	Report(err)
 	res = regnames[int(s.Reg)]+"("+hex(regval)+ ")"
 	return
 }
 
-func NewRegArg(val int, c *CPU) (arg *RegisterArg){
+func NewRegArg(val int) (arg *RegisterArg){
 	arg = new(RegisterArg)
 	arg.Reg = Register(val)
-	arg.Cpu = c
 	return
 }
 
-func (arg *RegisterArg) SetVal(value int) error {
-	return arg.Cpu.SetRegister(arg.Reg, value)
+func (arg *RegisterArg) SetVal(value int, c *CPU) error {
+	return c.SetRegister(arg.Reg, value)
 }
 
-func (arg *RegisterArg) GetVal() (int, error) {
-	return arg.Cpu.GetRegister(arg.Reg)
+func (arg *RegisterArg) GetVal(c *CPU) (int, error) {
+	return c.GetRegister(arg.Reg)
 }
 
 type PtrArg struct {
 	Reg Register
-	Cpu  *CPU
 }
 
 func (s *PtrArg) Inspect() (res string) {
-	regval,err := s.Cpu.GetRegister(s.Reg)
+	res = "["+regnames[int(s.Reg)]+"]"
+	return
+}
+
+func (s *PtrArg) InspectContext(c *CPU) (res string) {
+	regval,err := c.GetRegister(s.Reg)
 	Report(err)
-	memval,err := s.Cpu.GetMemory(regval)
+	memval,err := c.GetMemory(regval)
 	Report(err)
 	res = "["+regnames[int(s.Reg)]+"("+hex(int(regval))+")]("+hex(memval)+")"
 	return
 }
 
-func NewPtrArg(val int, c *CPU) (arg *PtrArg){
+func NewPtrArg(val int) (arg *PtrArg){
 	arg = new(PtrArg)
 	arg.Reg = Register(val)
-	arg.Cpu = c
 	return 
 }
 
-func (arg *PtrArg) SetVal(value int) error {
-	addr, err := arg.Cpu.GetRegister(arg.Reg)
+func (arg *PtrArg) SetVal(value int, c* CPU) error {
+	addr, err := c.GetRegister(arg.Reg)
 	if err != nil { return err }
-	return arg.Cpu.SetMemory(addr, value)
+	return c.SetMemory(addr, value)
 }
 
-func (arg *PtrArg) GetVal() (int, error) {
-	addr, err := arg.Cpu.GetRegister(arg.Reg)
+func (arg *PtrArg) GetVal(c* CPU) (int, error) {
+	addr, err := c.GetRegister(arg.Reg)
 	if err != nil { return 0,err }
-	return arg.Cpu.GetMemory(addr)
+	return c.GetMemory(addr)
 }
 
 type Register int
@@ -172,6 +185,17 @@ type Instruction struct {
 	Dst   Arg
 }
 
+func (op Opcode) Inspect() (res string) {
+	res = opnames[int(op)]
+	return
+}
+
+
+func (s *Instruction) InspectContext(c *CPU) (res string) {
+	res = "<"
+	res += opnames[int(s.Instr)] + " "+ s.Dst.InspectContext(c) +" "+ s.Src.InspectContext(c) +" >"
+	return
+}
 
 func (s *Instruction) Inspect() (res string) {
 	res = "<"
@@ -180,16 +204,15 @@ func (s *Instruction) Inspect() (res string) {
 }
 
 func (self *Instruction) Exec(cpu *CPU) error {
-	self.Cpu = cpu
-	ipval, err := self.Cpu.GetRegister(ip)
+	ipval, err := cpu.GetRegister(ip)
 	if err != nil {
 		return err
 	}
-	l, err := self.Dst.GetVal()
+	l, err := self.Dst.GetVal(cpu)
 	if err != nil {
 		return err
 	}
-	r, err := self.Src.GetVal()
+	r, err := self.Src.GetVal(cpu)
 	if err != nil {
 		return err
 	}
@@ -199,18 +222,22 @@ func (self *Instruction) Exec(cpu *CPU) error {
 		if res == 0 { eqval = 1 }
 		if res < 0 { smallerval = 1 }
 		if res > 0 { biggerval = 1 }
-		err = self.Cpu.SetRegister(eq, eqval)
-		err = self.Cpu.SetRegister(bigger, biggerval)
-		err = self.Cpu.SetRegister(smaller, smallerval)
+		err = cpu.SetRegister(eq, eqval)
+		err = cpu.SetRegister(bigger, biggerval)
+		err = cpu.SetRegister(smaller, smallerval)
 		if err != nil {
 			return err
 		}
 
-		err = self.Dst.SetVal(res)
+		err = self.Dst.SetVal(MutateInt(res), cpu)
 		if err != nil {
 			return err
 		}
-		self.Cpu.SetRegister(ip, ipval+1)
+		ipval, err = cpu.GetRegister(ip)
+		if err != nil {
+			return err
+		}
+		cpu.SetRegister(ip, ipval+1)
 		return nil
 	}
 
@@ -220,37 +247,38 @@ func (self *Instruction) Exec(cpu *CPU) error {
 		if l == r { eqval = 1 }
 		if l < r  { smallerval = 1 }
 		if l > r { biggerval = 1 }
-		err = self.Cpu.SetRegister(eq, eqval)
-		err = self.Cpu.SetRegister(bigger, biggerval)
-		err = self.Cpu.SetRegister(smaller, smallerval)
+		err = cpu.SetRegister(eq, eqval)
+		err = cpu.SetRegister(bigger, biggerval)
+		err = cpu.SetRegister(smaller, smallerval)
 		if err != nil {
 			return err
 		}
-		return self.Cpu.SetRegister(ip, ipval+1)
+		return cpu.SetRegister(ip, ipval+1)
 	case ldw:
-		mem,err := self.Cpu.GetMemory(ipval+1)
+		mem,err := cpu.GetMemory(ipval+1)
 		if err != nil { return err }
-		err = self.Dst.SetVal(mem)
+		err = self.Dst.SetVal(mem,cpu)
 		if err != nil { return err }
-		return self.Cpu.SetRegister(ip, ipval+2)
+		return cpu.SetRegister(ip, ipval+2)
 	case jmp:
-		return self.Cpu.SetRegister(ip, l)
+		return cpu.SetRegister(ip, l)
 	case jnz:
 		if r == 0 {
-			return self.Cpu.SetRegister(ip, ipval+1)
+			return cpu.SetRegister(ip, ipval+1)
 		} else {
-			return self.Cpu.SetRegister(ip,l)
+			return cpu.SetRegister(ip,l)
 		}
 	case jz:
 		if r == 0 {
-			return self.Cpu.SetRegister(ip, l)
+			return cpu.SetRegister(ip, l)
 		} else {
-			return self.Cpu.SetRegister(ip, ipval+1)
+			return cpu.SetRegister(ip, ipval+1)
 		}
 	case sys:
-		err := self.Cpu.Sys(Syscall(l),r)
-		if err != nil { return err }
-		return self.Cpu.SetRegister(ip, ipval+1)
+		//err := self.Cpu.Sys(Syscall(l),r)
+		//if err != nil { return err }
+		//return self.Cpu.SetRegister(ip, ipval+1)
+		return errors.New("Invalid Opcode")
 	default:
 			return errors.New("Invalid Opcode")
 	}
