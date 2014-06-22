@@ -99,17 +99,14 @@ words (the first one is the instruction, the second one is the word that is
     loaded into the dst of the instruction.
 
 ###REGISTER
-The CPU has the following registers.
-ip, eq, smaller, bigger, t0, ..., t7
-ip is the program counter
-eq, smaller and bigger are set to 0/1 depending on the result of the last
+The CPU has the following registers: `ip, eq, smaller, bigger, t0, ..., t7`
+* `ip` is the program counter
+* `eq`, `smaller` and `bigger` are set to 0/1 depending on the result of the last
 arithmic operation (eq to 0, smaller than etc).
-t0 to t7 are general purpose registers. By convention t7 is used as a stack
-pointer, t6 is used in macros and should not be used. t0 and t1 are registers
-used to supply additional arguments to syscalls
+* `t0` to `t7` are general purpose registers. By convention `t7` is used as a stack pointer, `t6` is used in macros and should not be used. `t0` and `t1` are registers used to supply additional arguments to syscalls
 
 ###INSTRUCTIONS
-All instructions are of the kind [op dst src]. However in some instructions src
+All instructions are of the kind `[op dst src]`. However in some instructions src
 may be ignored.  dst and src may both be either a constant in from 0 to 255, a
 register or a register derefernce.
 
@@ -120,23 +117,20 @@ register or a register derefernce.
 ```
 
 The cpu understands the following operations:
-Instructions = [:add, :sub, :mul, :div, :mod, :rol, :band, :bor, :not, :xor,
-  :cmp, :mov, :ldw, :jmp, :jnz, :jz, :sys]
+Instructions = `[:add, :sub, :mul, :div, :mod, :rol, :band, :bor, :not, :xor, :cmp, :mov, :ldw, :jmp, :jnz, :jz, :sys]`
 
-* add, sub, mul, div, mod, rol, band, bor, not, xor should be self explainatory
-  (all of them set eq,bigger,smaller according to the result compared to 0)
-* cmp sets eq bigger and smaller according to dst compared to src
-* mov copies src to dest
-* ldw will only use the dst field and the next word in memory and copy the
+* `add`, `sub`, `mul`, `div`, `mod`, `rol`, `band`, `bor`, `not`, `xor` should be self explainatory
+  (all of them set `eq`,`bigger`,`smaller* according to the result compared to 0)
+* `cmp` sets eq bigger and smaller according to dst compared to src
+* `mov` copies src to dest
+* *ldw` will only use the dst field and the next word in memory and copy the
   content of the next word into dst
     example (this will load 0x12356 into t1)
       ldw t1,0
       0x12356
-* jmp jump to dst
-* jnz jz will jump to dst if src is != 0 or == 0 respectively
-* sys performs a syscall. The index is stored in dst, the first argument in
-* src, the second argument in t0.
-  sys may change t0 and t1 to return values
+* `jmp` jump to dst
+* `jnz` jz will jump to dst if src is != 0 or == 0 respectively
+* `sys` performs a syscall. The index is stored in dst, the first argument in src, the second argument in t0. `sys` may change t0 and t1 to return values
 
 ###ENCODING
 See cpu/dissassembler.go or compiler.rb if you want to dissassemble on word into one instruction
@@ -144,18 +138,18 @@ See cpu/dissassembler.go or compiler.rb if you want to dissassemble on word into
 ###SYSCALLS
 There are a few syscalls:
 
-EXIT = 0 #terminates the vm, arg1,arg2 unused, does not return
-READB = 1 #reads one byte from fd arg1 and stores it in t0, returns 1 in t1 if read was successfull, 0 else
-WRITEB = 2 #writes one byte from arg2 to fd arg1, returns nothing
-READW = 3 #reads one word from fd arg1 and stores it in t0, returns 1 in t1 if read was successfull, 0 else
-WRITEW = 4 #writes arg2 to fd arg1, returns nothing
-EXEC = 5 #reads the string arg1 points to from the VM memory and executes it as shell instruction, returns a fd for the stdin/stdout pipe of the process in t0, returns 0 if starting failes
-BREAK = 6 #stops the CPU until enter is pressed on the stdin of the service (should not be used in production code)
-STEP = 7 #sets the single step flag to arg1 (1 = singlesteping, 0 = stop singlestepping). While stepping the cpu state is printed to stdout of the service and after every instruction enter has to be pressed
-OPEN = 8 #opens the file with path given as "./storage/"+get_string_from_VM_memory(arg1) rw, returning the fd in t0 (0 if opening failed)
-CORE = 9 #returns some informations about the core in t0 (size of memory) and t1 (size of initial code segment)
-CLOSE = 10 #closes the fd given by arg1
-CLOCK = 11 #sets t0 to the current time
+* EXIT = 0 #terminates the vm, arg1,arg2 unused, does not return
+* READB = 1 #reads one byte from fd arg1 and stores it in t0, returns 1 in t1 if read was successfull, 0 else
+* WRITEB = 2 #writes one byte from arg2 to fd arg1, returns nothing
+* READW = 3 #reads one word from fd arg1 and stores it in t0, returns 1 in t1 if read was successfull, 0 else
+* WRITEW = 4 #writes arg2 to fd arg1, returns nothing
+* EXEC = 5 #reads the string arg1 points to from the VM memory and executes it as shell instruction, returns a fd for the stdin/stdout pipe of the process in t0, returns 0 if starting failes
+* BREAK = 6 #stops the CPU until enter is pressed on the stdin of the service (should not be used in production code)
+* STEP = 7 #sets the single step flag to arg1 (1 = singlesteping, 0 = stop singlestepping). While stepping the cpu state is printed to stdout of the service and after every instruction enter has to be pressed
+* OPEN = 8 #opens the file with path given as "./storage/"+get_string_from_VM_memory(arg1) rw, returning the fd in t0 (0 if opening failed)
+* CORE = 9 #returns some informations about the core in t0 (size of memory) and t1 (size of initial code segment)
+* CLOSE = 10 #closes the fd given by arg1
+* CLOCK = 11 #sets t0 to the current time
 
 
 ##GLHF
