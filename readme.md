@@ -127,10 +127,8 @@ Instructions = `[:add, :sub, :mul, :div, :mod, :rol, :band, :bor, :not, :xor, :c
   content of the next word into dst
     example (this will load 0x12356 into t1)
 
-		```
       ldw t1,0
       0x12356
-		```
 
 * `jmp` jump to dst
 * `jnz` jz will jump to dst if src is != 0 or == 0 respectively
