@@ -1,10 +1,17 @@
 #README
 
-This is a small custom VM that was used as a service during the 2012 rwthctf.
+This is a small custom VM written in golang that was used as a service during the 2012 rwthctf. 
+
+## Structure
+The code of the implements the VM itself is stored in `./cpu/`. The original service image is stored in `./data/`. 
+A simple makro assembler containing complex makros suchas function definitions/calls and controllflow is given in `compiler.rb`. A set of primities for strings (strcopy println printi itou strlen etc), heap (malloc/free) and some crypto (weak hash/stream cipher) are implemented in `string.rb`, `libcrypt.rb`, `libmem.rb` and `string.rb`. Finally the code of the service is implemented in `service.rb`.
+
+The following document contains the information given to the participants.
 
 This sevice is an image for a VM simulating a custom CPU. For every incoming connection,
 one such VM is spawned and stdin/stdout fds (0 and 1) are mapped to the corresponding socket.
 The challenge is not to understand the vm (even though you may want to take a few looks in the code to understand what exactly certain instructions do). To the best of my knowledge there should be no exploitable bugs in the VM itself (go newb though). It is my intend to have an instruction set that is simple enough to write some interesting analysis tools during the CTF (you will have a hard time reading the code without). Thus the VM has a very small set of instructions. On the other hand this makes an macro assembler necessary for implementing programs. You can find a copy of the VM code, the assembler and even some parts of the code of the service in /home/service_sources. You have to recompile the VM with make.sh if you change the bytecode in data/img.go. Recompiling the VM takes the image from data/img.go and the rest of the code to produce a standalone binary. For make.sh to be successfull the service has to be currently stoped, because the original binary is locked from the running process otherwise.
+
 ```sh
 root@vuln $ sv stop azurecoast
 root@vuln $ pkill binary
