@@ -94,7 +94,7 @@ you can call to a arbitrary address by using the `call(target)` macro. The `call
 
 ###WORDSIZE
 The smallest addressable unit is a 4 BYTE word. Every instruction is 4 byte
-long.  The only exception to this is the ldw instruction which uses two machine
+long.  The only exception to this is the `ldw` instruction which uses two machine
 words (the first one is the instruction, the second one is the word that is
     loaded into the dst of the instruction.
 
@@ -123,11 +123,15 @@ Instructions = `[:add, :sub, :mul, :div, :mod, :rol, :band, :bor, :not, :xor, :c
   (all of them set `eq`,`bigger`,`smaller* according to the result compared to 0)
 * `cmp` sets eq bigger and smaller according to dst compared to src
 * `mov` copies src to dest
-* *ldw` will only use the dst field and the next word in memory and copy the
+* `ldw` will only use the dst field and the next word in memory and copy the
   content of the next word into dst
     example (this will load 0x12356 into t1)
+
+		```
       ldw t1,0
       0x12356
+		```
+
 * `jmp` jump to dst
 * `jnz` jz will jump to dst if src is != 0 or == 0 respectively
 * `sys` performs a syscall. The index is stored in dst, the first argument in src, the second argument in t0. `sys` may change t0 and t1 to return values
